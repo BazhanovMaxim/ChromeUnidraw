@@ -19,6 +19,12 @@ desktop.ini
 .env
 .env.*
 
+# TypeScript build cache
+tsconfig.tsbuildinfo
+
+# Claude Code
+.claude/
+
 # Logs
 *.log
 npm-debug.log*
