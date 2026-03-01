@@ -24,15 +24,55 @@
     );
   }
 
+  // ── Проверка структуры: похоже на unidraw JSON? ────────────
+  function looksLikeUnidraw(text) {
+    try {
+      const data = JSON.parse(text);
+      return data.elements && Array.isArray(data.elements);
+    } catch (_) {
+      return false;
+    }
+  }
+
   // ── 1. Перехват URL.createObjectURL (blob-скачивание) ───────
   const origCreateObjectURL = URL.createObjectURL.bind(URL);
   URL.createObjectURL = function (blob) {
     const blobUrl = origCreateObjectURL(blob);
-    if (blob && blob.type === 'application/vnd.unidraw+json') {
-      blob.text().then((json) => sendIntercepted(json, 'blob'));
+    if (blob) {
+      const mime = blob.type || '';
+      const maybeUnidraw =
+        mime === 'application/vnd.unidraw+json' ||
+        mime.includes('json') ||
+        mime === 'application/octet-stream' ||
+        mime === '';
+      if (maybeUnidraw && blob.size > 10) {
+        blob.text().then((text) => {
+          if (looksLikeUnidraw(text)) {
+            sendIntercepted(text, 'blob');
+          }
+        });
+      }
     }
     return blobUrl;
   };
+
+  // ── 1b. Перехват <a download=".unidraw"> кликов ───────────
+  document.addEventListener('click', (e) => {
+    const a = e.target.closest('a[download]');
+    if (!a) return;
+    const href = a.getAttribute('href') || '';
+    const filename = a.getAttribute('download') || '';
+    if (filename.endsWith('.unidraw') || href.startsWith('blob:')) {
+      fetch(href)
+        .then((r) => r.text())
+        .then((text) => {
+          if (looksLikeUnidraw(text)) {
+            sendIntercepted(text, 'download-link');
+          }
+        })
+        .catch(() => {});
+    }
+  }, true);
 
   // ── 2. Перехват XMLHttpRequest (POST /backup) ──────────────
   const origXhrOpen = XMLHttpRequest.prototype.open;
