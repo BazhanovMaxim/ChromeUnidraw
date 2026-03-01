@@ -1,21 +1,24 @@
-import { FileDown } from 'lucide-react'
-
 export function EmptyState() {
   return (
     <div className="flex flex-col items-center justify-center py-12 px-6 text-center">
-      <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
-        <FileDown className="h-7 w-7 text-primary" />
-      </div>
-      <h2 className="text-base font-semibold mb-1">Нет данных</h2>
-      <p className="text-sm text-muted-foreground max-w-[280px] leading-relaxed">
-        Откройте борд на{' '}
-        <span className="font-medium text-foreground">unidraw.io</span>,
-        нажмите{' '}
-        <span className="font-medium text-foreground">
-          «Сохранить бэкап на компьютер»
-        </span>{' '}
-        — расширение перехватит файл и покажет диаграмму здесь.
+      <img src="/icons/bob-header.png" alt="Bob" className="w-14 h-14 mb-4" />
+      <h2 className="text-base font-semibold mb-1">Боб доволен</h2>
+      <p className="text-sm text-muted-foreground max-w-[340px] leading-relaxed">
+        Он пока не видит вашу диаграмму и ему хорошо. Но если хотите его разозлить:
       </p>
+      <ol className="text-sm text-muted-foreground max-w-[340px] leading-relaxed mt-2 text-left list-decimal list-inside space-y-1">
+        <li>
+          Откройте борд на{' '}
+          <span className="font-medium text-foreground">unidraw.io</span>
+        </li>
+        <li>
+          Нажмите{' '}
+          <span className="font-medium text-foreground">
+            «Сохранить бэкап на компьютер»
+          </span>
+        </li>
+        <li>Боб увидит вашу диаграмму и будет в ярости</li>
+      </ol>
     </div>
   )
 }
