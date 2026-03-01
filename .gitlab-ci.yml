@@ -1,0 +1,41 @@
+stages:
+  - build
+  - release
+
+variables:
+  NODE_VERSION: "20"
+
+build:
+  stage: build
+  image: node:${NODE_VERSION}-alpine
+  script:
+    - npm ci
+    - npm run build
+    - cd dist && zip -r ../bob-hates-your-diagrams-${CI_COMMIT_TAG:-dev}.zip . && cd ..
+  artifacts:
+    paths:
+      - bob-hates-your-diagrams-${CI_COMMIT_TAG:-dev}.zip
+    expire_in: 1 week
+  rules:
+    - if: $CI_COMMIT_TAG
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+
+release:
+  stage: release
+  image: registry.gitlab.com/gitlab-org/release-cli:latest
+  needs:
+    - job: build
+      artifacts: true
+  script:
+    - echo "Creating release for ${CI_COMMIT_TAG}"
+  release:
+    tag_name: $CI_COMMIT_TAG
+    name: "Bob Hates Your Diagrams ${CI_COMMIT_TAG}"
+    description: "Release ${CI_COMMIT_TAG}"
+    assets:
+      links:
+        - name: "bob-hates-your-diagrams-${CI_COMMIT_TAG}.zip"
+          url: "${CI_PROJECT_URL}/-/jobs/${CI_JOB_ID}/artifacts/raw/bob-hates-your-diagrams-${CI_COMMIT_TAG}.zip"
+          link_type: package
+  rules:
+    - if: $CI_COMMIT_TAG
