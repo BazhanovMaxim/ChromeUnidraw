@@ -5,8 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
-    "pack": "npm run build && powershell.exe -NoProfile -ExecutionPolicy Bypass -File pack.ps1"
+    "build": "tsc -b && vite build"
   },
   "dependencies": {
     "@radix-ui/react-scroll-area": "^1.2.7",
