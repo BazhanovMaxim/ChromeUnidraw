@@ -2,10 +2,30 @@ import { useState } from 'react'
 import { Copy, Check, Download } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import type { Snapshot } from '@/hooks/use-unidraw'
+import type { Snapshot, Diagram } from '@/hooks/use-unidraw'
 
 interface CodePanelProps {
   snapshot: Snapshot | null
+}
+
+function getDiagrams(snapshot: Snapshot): Diagram[] {
+  if (snapshot.diagrams && snapshot.diagrams.length > 0) {
+    return snapshot.diagrams
+  }
+  return [{ mermaid: snapshot.mermaid, nodes: snapshot.nodes, edges: snapshot.edges }]
+}
+
+function buildFullCode(snapshot: Snapshot): string {
+  const diagrams = getDiagrams(snapshot)
+  if (diagrams.length === 1) {
+    return diagrams[0].mermaid
+  }
+  return diagrams
+    .map(
+      (d, i) =>
+        `%% Подграф ${i + 1} (${d.nodes.length} узлов, ${d.edges.length} связей)\n${d.mermaid}`
+    )
+    .join('\n\n')
 }
 
 export function CodePanel({ snapshot }: CodePanelProps) {
@@ -13,8 +33,10 @@ export function CodePanel({ snapshot }: CodePanelProps) {
 
   if (!snapshot) return null
 
+  const fullCode = buildFullCode(snapshot)
+
   const handleCopy = async () => {
-    await navigator.clipboard.writeText(snapshot.mermaid)
+    await navigator.clipboard.writeText(fullCode)
     setCopied(true)
     setTimeout(() => setCopied(false), 1500)
   }
@@ -50,7 +72,7 @@ export function CodePanel({ snapshot }: CodePanelProps) {
 
       <ScrollArea className="h-[340px] rounded-lg">
         <pre className="code-block rounded-lg p-4 text-xs leading-relaxed overflow-x-auto">
-          {snapshot.mermaid}
+          {fullCode}
         </pre>
       </ScrollArea>
     </div>

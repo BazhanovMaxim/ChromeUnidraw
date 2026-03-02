@@ -21,7 +21,7 @@ async function handleBackup(message, sender) {
   try {
     const parsed = JSON.parse(message.json);
     const result = parseUnidraw(parsed);
-    const mermaid = toMermaid(result, 'TD');
+    const built = buildDiagrams(result, 'TD');
 
     const snapshot = {
       id: Date.now() + '-' + Math.random().toString(36).slice(2, 8),
@@ -29,7 +29,9 @@ async function handleBackup(message, sender) {
       boardUrl: sender.tab?.url || '',
       interceptSource: message.interceptSource || 'unknown',
       rawJson: message.json,
-      mermaid: mermaid,
+      mermaid: built.mermaid,
+      diagrams: built.diagrams,
+      noiseNodes: built.noiseNodes,
       nodes: result.nodes,
       edges: result.edges,
       orphanLines: result.orphanLines,
@@ -72,6 +74,13 @@ async function updateBadge() {
 
 // Инициализация бейджа при старте
 updateBadge();
+
+// Обновляем бейдж при любых изменениях storage (например, очистка истории из popup)
+chrome.storage.onChanged.addListener((changes) => {
+  if (changes.history) {
+    updateBadge();
+  }
+});
 
 // ─────────────────────────────────────────────
 // Парсер (порт UnidrawParser.java на JavaScript)
@@ -179,4 +188,95 @@ function toMermaid(board, direction = 'TD') {
     }
   }
   return lines.join('\n').trimEnd();
+}
+
+// ─────────────────────────────────────────────
+// Связные компоненты и множественные диаграммы
+// ─────────────────────────────────────────────
+
+function findConnectedComponents(nodes, edges) {
+  // Строим adjacency map: nodeId → Set<nodeId>
+  const adj = new Map();
+  const connectedIds = new Set();
+
+  for (const edge of edges) {
+    const s = edge.sourceId;
+    const t = edge.targetId;
+    if (!s || !t) continue;
+    connectedIds.add(s);
+    connectedIds.add(t);
+    if (!adj.has(s)) adj.set(s, new Set());
+    if (!adj.has(t)) adj.set(t, new Set());
+    adj.get(s).add(t);
+    adj.get(t).add(s);
+  }
+
+  // BFS по компонентам
+  const visited = new Set();
+  const components = [];
+
+  for (const nodeId of connectedIds) {
+    if (visited.has(nodeId)) continue;
+    const component = new Set();
+    const queue = [nodeId];
+    while (queue.length > 0) {
+      const n = queue.shift();
+      if (visited.has(n)) continue;
+      visited.add(n);
+      component.add(n);
+      const neighbors = adj.get(n);
+      if (neighbors) {
+        for (const nb of neighbors) {
+          if (!visited.has(nb)) queue.push(nb);
+        }
+      }
+    }
+    components.push(component);
+  }
+
+  return { components, connectedIds };
+}
+
+function buildDiagrams(parsed, direction = 'TD') {
+  const { nodes, edges, orphanLines } = parsed;
+
+  const { components, connectedIds } = findConnectedComponents(nodes, edges);
+
+  // Индекс узлов по id
+  const nodeById = new Map();
+  for (const node of nodes) {
+    nodeById.set(node.id, node);
+  }
+
+  // Собираем диаграммы из компонент (сортируем по убыванию размера)
+  components.sort((a, b) => b.size - a.size);
+
+  const diagrams = [];
+  for (const comp of components) {
+    const compNodes = [];
+    for (const id of comp) {
+      const node = nodeById.get(id);
+      if (node) compNodes.push(node);
+    }
+    const compEdges = edges.filter(
+      (e) => comp.has(e.sourceId) && comp.has(e.targetId)
+    );
+    const mermaidCode = toMermaid(
+      { nodes: compNodes, edges: compEdges },
+      direction
+    );
+    diagrams.push({
+      mermaid: mermaidCode,
+      nodes: compNodes,
+      edges: compEdges,
+    });
+  }
+
+  // Мусор: узлы не попавшие ни в одну компоненту
+  const noiseNodes = nodes.filter((n) => !connectedIds.has(n.id));
+
+  // Общий mermaid — для обратной совместимости
+  const combinedMermaid = diagrams.map((d) => d.mermaid).join('\n\n');
+
+  return { diagrams, noiseNodes, mermaid: combinedMermaid, orphanLines };
 }

@@ -17,7 +17,7 @@ export function Header({ snapshot, settings, onBlockToggle }: HeaderProps) {
   return (
     <header className="bg-stone-100 text-stone-800 px-4 py-3 flex items-center gap-3 border-b border-stone-200">
       <div className="flex items-center gap-2">
-        <img src="/icons/bob-header.png" alt="Bob" className="w-7 h-7" />
+        <img src="/icons/bob_white.svg" alt="Bob" className="w-7 h-7" />
         <div>
           <h1 className="text-sm font-semibold leading-none">Bob Hates Your Diagrams</h1>
           {time && (

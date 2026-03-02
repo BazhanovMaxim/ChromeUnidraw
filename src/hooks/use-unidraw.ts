@@ -1,5 +1,11 @@
 import { useState, useEffect, useCallback } from 'react'
 
+export interface Diagram {
+  mermaid: string
+  nodes: NodeItem[]
+  edges: EdgeItem[]
+}
+
 export interface Snapshot {
   id: string
   timestamp: number
@@ -7,6 +13,8 @@ export interface Snapshot {
   interceptSource: string
   rawJson: string
   mermaid: string
+  diagrams?: Diagram[]
+  noiseNodes?: NodeItem[]
   nodes: NodeItem[]
   edges: EdgeItem[]
   orphanLines: EdgeItem[]

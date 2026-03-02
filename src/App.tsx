@@ -8,6 +8,7 @@ import { DiagramPanel } from '@/components/DiagramPanel'
 import { CodePanel } from '@/components/CodePanel'
 import { ElementsPanel } from '@/components/ElementsPanel'
 import { EmptyState } from '@/components/EmptyState'
+import { BobQuote } from '@/components/BobQuote'
 
 export function App() {
   const {
@@ -44,6 +45,8 @@ export function App() {
               onNext={goNext}
               onClear={clearHistory}
             />
+
+            <BobQuote snapshot={currentSnapshot} />
 
             <Tabs defaultValue="diagram" className="flex-1">
               <TabsList className="w-full justify-start rounded-none border-b bg-background px-3 h-10">
